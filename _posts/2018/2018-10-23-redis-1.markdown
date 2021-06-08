@@ -1,0 +1,291 @@
+---
+layout:     post
+title:      "Redis(一) 基础与api"
+date:       2018-10-23
+author:     "ZhouJ000"
+header-img: "img/in-post/2018/post-bg-2018-headbg.jpg"
+catalog: true
+tags:
+    - 缓存
+    - nosql
+--- 
+
+<font id="last-updated">最后更新于：2018-10-30</font>
+
+[Redis(一) 基础与api](https://zhouj000.github.io/2018/10/23/redis-1)  
+[Redis(二) 小功能](https://zhouj000.github.io/2018/11/01/redis-2)  
+[Redis(三) 阻塞与内存](https://zhouj000.github.io/2018/11/03/redis-3)  
+[Redis(四) 缓存设计](https://zhouj000.github.io/2018/11/04/redis-4)  
+[Redis(五) 客户端调用](https://zhouj000.github.io/2018/11/06/redis-5)  
+[Redis(六) 持久化与复制](https://zhouj000.github.io/2018/11/15/redis-6)  
+[Redis(七) 哨兵](https://zhouj000.github.io/2018/11/16/redis-7)  
+[Redis(八) 集群](https://zhouj000.github.io/2018/11/17/redis-8)  
+
+
+
+# Reids特性
+
+1. **速度快**
+	+ 所有数据都是存放在内存存内存存储的
+	+ C语言实现，相对速度更快一点
+	+ 使用单线程架构，预防了多线程可能产生的竞争问题
+	+ 源码优雅，精打细磨，集性能和优雅一身
+2. **基于键值对的数据结构服务**
+3. **丰富的功能**
+	+ 键过期功能，可以用来实现缓存
+	+ 发布订阅功能，可以用来实现消息系统
+	+ 支持Lua脚本，可以利用Lua创造出新的Redis命令
+	+ 提供了简单的事务功能，能一定程度保证事务特性
+	+ 提供了流水线(Pipeline)功能，这样客户端能将一批命令一次性传到Redis，减少了网络的开销
+4. **简单稳定**
+	+ 源码很少
+	+ 单线程模型使Redis服务端处理模型变得简单，而且客户端开发也简单
+	+ Redis不需要依赖操作系统的类库，Redis自己实现了事件处理的相关功能
+5. **客户端语言多**
+	+ 提供了简单的TCP通信协议，很多编程语言可以很方便地接入到Redis
+6. **持久化**
+	+ 提供了两种持久化方式:RDB和AOF，可以用两种策略将内存的数据保存到硬盘中
+7. **主从复制**
+	+ 提供复制功能，实现多个相同数据的Redis副本，复制功能是分布式Redis的基础
+8. **高可用和分布式**
+	+ 高可用实现Redis Sentinel，保证Redis节点的故障发现和故障自动转移
+	+ 分布式实现Redis Cluster，提供高可用、读写和容量的扩展性
+
+
+	
+# API
+
+查看所有键： keys *  
+键总数： dbsize  
+检查键是否存在： exists key  
+删除键： del key [key...]  
+键过期： expire key seconds，(ttl key会返回键的剩余过期时间)  
+键的数据结构类型： type key  
+
+使用object encoding key命令可以查询内部编码
+![redis-01](/img/in-post/2018/10/redis-01.png)
+可以看到每种数据结构都有两种以上的内部编码实现，这样设计有2个好处，一是可以改进内部编码，而对外数据结构和命令没有影响，这样一旦开发出更优秀的内部编码实现，无需改动外部数据结构和命令；第二多种内部编码实现可以在不同场景下发挥各自的优势，例如ziplist比较节省内存，但在列表元素比较多的情况，性能会下降，这时redis会根据配置选项将列表类型的内部实现转换为linkedlist
+
+redis使用了单线程架构和I/O多路复用模型来实现高性能的内存数据库服务
+
+每次客户端调用都会经历发送命令、执行命令、返回结果三个过程。因为redis是单线程处理命令的，所以一条命令从客户端达到服务端不一定会被立即执行，所有命令都会进入一个队列中，然后逐个执行。命令的执行顺序时不确定的，但是确定不会有两条命令同时执行，不会产生并发问题
+
+而通常来讲，单线程处理能力比多线程差，那为什么redis使用单线程模型会达到每秒万级的处理能力呢？可以归结为三点：  
+1、**存内存访问**，redis将所有数据放在内存中，内存的响应时长大约为100纳秒，这是redis每秒万级访问的重要基础  
+2、非阻塞I/O，redis使用epoll作为**I/O多路复用**技术的实现，再加上redis自身的事件处理模型将epoll中的连接、读写、关闭都转换为事件，不在网络I/O上浪费过多的时间  
+3、**单线程**避免了线程切换和竞争产生的消耗  
+**单线程带来的好处：**  
+1、简化数据结构和算法的实现  
+2、避免线程切换和竞态产生的消耗，对于服务端开发来说，锁和线程切换通常是性能杀手  
+**单线程的问题：**  
+对于每个命令的执行时间是有要求的，如果某个命令执行过长，会造成其他命令的阻塞，对于高性能的服务来说是致命的
+
+
+## 字符串
+
+是redis最基础的数据结构。首先键都是字符串类型，而且其他几种数据结构都是在字符串类型基础上构建的。字符串类型的值可以是字符串、数字、二进制，但值最大不能超过512MB
+
+**常用命令：**
+
+1、设置值： set key value [ex seconds] [px milliseconds] [nx|xx]  
+其中，ex seconds为键设置秒级过期时间；px milliseconds为键设置毫秒级过期时间；nx键必须不存在才能成功，用于更新；xx键必须存在才能设置成功，用于更新  
+此外redis还提供setex和setnx两个命令，相当于一个整合的命令，setnx可以作为分布式锁的一种实现方式
+
+2、获取值： get key  
+3、批量设值： mset key value [key value...]  
+4、批量获取： mget key [key...]  
+对于开发人员来说，网络可能会成为性能的瓶颈。使用批量操作，有助于提高业务处理效率，但是要注意每次批量操作所发送的命令数不是无节制的，如果数量过多可能造成redis阻塞或者网络拥塞  
+5、计数： incr key、decr key、incrby key increment、decrby key decrement、incrbyfloat key increment  
+
+**不常用命令：**
+
+1、追加值： append key value  
+2、字符串长度： strlen key  
+3、设置并返回值： getset key value  
+4、设置指定位置的字符： setrange key offeset value  
+5、获取部分字符串： getrange key start end  
+
+**内部编码：**
+
++ int: 8个字节的长整数
++ embstr：小于等于39个字节的字符串
++ raw：大于39个字节的字符串
+
+**可用场景：**
+
+1、缓存功能(序列化、json...)  
+2、计数  
+3、共享session  
+4、限速(限制频繁访问...)
+
+
+## 哈希
+
+**命令：**
+
+1、设置值： hset key field value  
+2、获取值： hget key field  
+3、删除field： hdel key field [field...]  
+4、计算field个数： hlen key  
+5、批量设值： hmset key field value [field value...]  
+6、批量取值： hmget key field [field...]  
+7、判断field是否存在： hexists key field  
+8、获取所有field： hkeys key  
+9、获取所有value： hvals key  
+10、获取所有field-value： hgetall key  
+11、使用hgetall时，如果哈希元素个数过多，会存在阻塞redis的可能。如果只需部分可以使用hmget，或者使用hscan命令  
+12、计数： hincrby key field increment、hincrbyfloat key field increment  
+13、计算value长度： hstrlen key field  
+
+**内部编码：**
+
++ ziplist(压缩列表)：当哈希类型元素个数小于hash-max-ziplist-entries配置(默认512个)、同时所有值都小于hash-max-ziplist-value配置(默认64字节)时，redis会使用ziplist作为哈希的内部实现，ziplist使用更加紧凑的结构实现多个元素的连续存储，所以在节省内存方面比hashtable更加优秀
++ hashtable(哈希表)：当哈希类型无法满足ziplist的条件时，使用hashtable作为哈希的内部实现，因为此时ziplist的读写效率会下降，而hashtable的读写时间复杂度为O(1)
+
+**可用场景：**
+
+更加直观的缓存信息，比如缓存用户信息，同时更新操作上也更加便捷，减少内存空间的使用  
+PS. 哈希类型和关系型数据库的两点不同之处：  
+1、哈希类型时稀疏的，而关系型数据库是完全结构化的，例如哈希类型的每个键有不同的filed值  
+2、关系型数据库可以做复杂的关系查询，而redis去模拟关系型复杂查询开发困难，维护成本高
+
+
+## 列表
+
+可以对列表两端插入和弹出，也可以获取指定范围的元素列表，获取指定索引下标的元素等。列表是一种比较灵活的数据结构，可以充当栈和队列的角色，在实际开发中有很多应用场景。列表类型有两个特点，第一列表中的元素是有序的，第二列表中的元素是可重复的  
+
+**命令：**
+
+1、从右插入元素： rpush key value [value...]  
+2、从左插入元素： lpush key value [value...]  
+3、向某个元素前或后插入元素： linsert key before|after pivot value(重复时第1个)  
+
+4、获取指定范围内元素列表： lrange key start end  
+5、获取列表指定索引下标元素： lindex key index  
+6、获取列表长度： llen key  
+
+7、从列表左侧弹出元素： lpop key  
+8、从列表右侧弹出元素： rpop key  
+9、删除指定元素： lrem key count value  
+count大于0，从左到右，删除最多count个等于value的元素  
+count小于0，从右到左，删除最多count绝对值个等于value的元素  
+count等于0，删除所有等于value的元素  
+10、按索引范围修建列表(保留)： ltrim key start end  
+
+11、修改指定索引下标的元素： lset key index newValue  
+
+12、阻塞式弹出： blpop key [key...] timeout、brpop key [key...] timeout  
+列表不为空则立即返回  
+列表为空阻塞，期间内如果添加了数据则立即返回。如果多个key，则从左到右遍历键，一旦有一个键能弹出元素则立即返回。如果多个客户端同时获取同一个key，最先执行命令的客户端可以获取弹出的值，剩下的客户端继续阻塞
+
+**内部编码：**
+
++ ziplist(压缩列表)：当列表的元素个数小于hash-max-ziplist-entries配置(默认512个)、同时所有值都小于hash-max-ziplist-value配置(默认64字节)时，redis会使用ziplist作为列表的内部实现来节省内存的使用
++ linkedlist(链表)：当列表类型无法满足ziplist时使用
++ quicklist：quicklist本身是一个双向无环链表，它的每一个节点都是一个ziplist。简单地说是以一个ziplist为节点的linkedlist，它结合了两者的优势，为列表类型提供一种更为优秀的内部编码实现
+
+**可用场景：**
+
+1、消息队列，使用lpush + brpop命令组合即可实现阻塞队列  
+2、文章列表，比如每篇文章用哈希结构存储，用列表添加用户文章。不过使用列表列型存储文章列表会有两个问题，第一如果每次分页获取的文章个数比较多，需要多次执行hgetall操作，此时可以考虑使用Pipeline批量获取或考虑将文章数据序列化为字符串类型使用mget获取；第二分页获取文章列表时，lrange命令在列表两端性能较好，但如果里列表过大取中间范围元素就会性能变差，可以考虑将列表做二级拆分或使用quicklist内部实现  
+3、时间轴
+
+lpush + lpop = Satck(栈)  
+lpush + rpop = Queue(队列)
+
+
+## 集合
+
+集合不允许有重复元素，而且元素是无序的，不能通过索引下标获取元素
+
+**命令：**
+
+1、添加元素： sadd key element [element...]  
+2、删除元素： srem key element [element...]  
+3、计算元素个数： scard key  
+4、判断元素是否在集合中： sismember key element  
+5、随机从集合返回指定个数元素： srandmember key [count]  
+6、从集合中随机弹出元素： spop key  
+7、获取所有元素： smembers key(时间复杂度较高，需考虑数据规模对redis的影响)  
+
+8、求多个集合交集： sinter key [key...]  
+9、求多个集合并集： suinon key [key...]  
+10、求多个集合差集： sdiff key [key...]  
+
+**内部编码：**
+
++ intset(整数集合)：当集合中元素都是整数且元素个数小于set-max-intset-entries配置(默认512个)时，redis选用intset作为集合内部实现来减少内存的使用
++ hashtable(哈希表)：无法满足intset时采用
+
+**可用场景：**
+
+比较典型的使用场景是标签(tag)，社交等
+
+
+## 有序集合
+
+它保留了集合不能有重复成员的特性，但不同的是有序列表的元素可以排序。但是它与列表使用索引下标作为排序依据不同，它给每个元素设置一个分数(score)作为排序依据
+
+**命令：**
+
+1、添加成员： zadd key [NX|XX][CH][INCR] score member [score member...]  
+nx: member必须不存在才能设置成功，用于添加；xx: member必须存在才能设置成功，用于更新；ch: 返回此次操作后有序集合和分数发生变化的个数；incr: 对score做增加，相当于zincrby  
+2、计算成员个数： zcard key  
+3、计算某个成员分数： zscore key member  
+4、计算成员排名： zrank key member、zrevrank key member  
+5、删除成员： zrem key member [member...]  
+6、增加成员的分数： zincrby key increment member  
+7、返回指定排名范围的成员： zrange key start end [withscores]、zrevrange key start end [withscores]  
+8、返回指定分数范围的成员： zrangebyscore key min max [withscores][limit offset count]、zrevrangebyscore key max min [withscores][limit offset count]  
+9、返回指定分数范围成员个数： zcount key min max  
+10、删除指定排名内的升序元素： zremrangebyrank key start end  
+11、删除指定分数范围的成员： zremrangebyscore key min max  
+
+交集、并集...
+
+**内部编码：**
+
++ ziplist(压缩列表)：当有序集合元素个数小于zset-max-ziplist-entries配置(默认128个)，同时每个元素值小于zset-max-ziplist-value配置(默认64字节)时，redsi使用ziplist作为内部实现减少内存的使用
++ skiplist(跳跃表)：当ziplist条件不满足时采用
+
+**可用场景：**
+
+排行榜系统、社交
+
+
+## 键管理
+
+除了之前介绍的键命令，如type、del、object、exists、expire等
+
+1、键重命名： rename key newkey  
+为了防止被强行rename，提供了renamenx命令，确保只有newkey不存在时才能被覆盖，保证原已有键值不被覆盖  
+由于重命名期间会执行del删除旧键，如果键对应值比较大，会存在阻塞redis的可能  
+
+1、随机返回一个键： randomkey  
+
+1、键在seconds秒后过期： expire key seconds  
+2、键在秒级时间戳timestamp后过期： expireat key timestamp  
+3、键在milliseconds毫秒后过期： pexpire key milliseconds，(pttl key会返回键的剩余毫秒级过期时间)  
+4、键在毫秒级时间戳timestamp后过期： pexpireat key millisecnods-timestamp  
+5、将键过期时间清除： persist key  
+对于字符串类型键，执行set命令会去掉过期时间  
+redis不支持二级数据结构(例如哈希、列表)内部元素的过期功能  
+setex命令作为set + expire的组合，不但是原子执行，同时减少了一次网络通讯的时间  
+
+键迁移：  
+1、move key db，用于redis内部进行数据迁移(多数据库)  
+2、dump key + restore key ttl value，不同redis实例之间进行数据迁移  
+3、migrate host port key/"" destination-db timeout [copy] [replace] [keys key [key...]]  
+migrate命令是将dump、restore、del3个命令进行组合，从而简化了操作流程，且具有原子性。在水平扩容中起到重要作用  
+
+1、全量遍历键： keys pattern(时间复杂度较高，需考虑数据规模对redis的影响)  
+2、渐进式遍历： scan cursor [match pattern] [count number]  
+3、哈希、集合、有序集合扫描遍历： hscan、sscan、zscan  
+
+
+## 数据库管理
+
+切换数据库： select dbIndex  
+清除数据库： flushdb/flushall  
+
+

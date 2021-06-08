@@ -1,0 +1,88 @@
+# Site settings
+title: ZhouJ000 Blog
+SEOTitle: 俊 | ZhouJ000 Blog
+header-img: img/home-bg.jpg
+email: 123259785@qq.com
+description: ""
+keyword: "zhouj000"
+url: "http://zhouj000.github.io"
+baseurl: ""
+
+
+# SNS settings
+RSS: false
+weibo_userid: 1005051559095712
+# zhihu_username: zhouj000
+# github_username: zhouj000
+
+
+# Build settings
+# from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
+highlighter: rouge
+permalink: pretty
+paginate: 10
+exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
+anchorjs: true                          # if you want to customize anchor. check out: `post.html`
+
+
+# Gems
+# from PR#40, to support local preview for Jekyll 3.0
+gems: [jekyll-paginate]
+
+
+# Markdown settings
+# replace redcarpet to kramdown,
+# although redcarpet can auto highlight code, the lack of header-id make the catalog impossible, so I switch to kramdown
+# document: http://jekyllrb.com/docs/configuration/#kramdown
+markdown: kramdown
+kramdown:
+  input: GFM                            # use Github Flavored Markdown !important
+
+
+# Disqus settings
+#disqus_username: _your_disqus_short_name_
+
+
+# Analytics settings
+# Baidu Analytics
+ba_track_id: f4e7f8071ef977dddd12bc2d79497a88
+# Google Analytics
+ga_track_id: 'UA-124807582-1'
+
+
+# Sidebar settings
+sidebar: true                           # whether or not using Sidebar.
+sidebar-about-description: "人生有限，将麻烦的事弄在一起，不是更简单了吗?"
+sidebar-avatar: /img/my-zj.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
+
+
+# Featured Tags
+featured-tags: true                     # whether or not using Feature-Tags
+featured-condition-size: 1              # A tag will be featured if the size of it is more than this condition value
+
+
+# Progressive Web Apps
+chrome-tab-theme-color: "#000000"
+service-worker: true
+
+
+# Friends
+friends: [
+    {
+        title: "paulzjw",
+        href: "https://paulzjw.github.io/"
+	}
+#    },{
+#        title: "Foo",
+#        href: "#"
+#    },{
+#        title: "Bar",
+#        href: "#"
+#    },{
+#        title: "Example Friends",
+#        href: "#"
+#    },{
+#        title: "It helps SEO",
+#        href: "#"
+#    }
+]

@@ -1,0 +1,44 @@
+---
+layout: page
+title: "About"
+description: "Hey, this is zhouj000."
+header-img: "img/about-bg.jpg"
+---
+
+<!-- Language Selector 
+<select onchange= "onLanChange(this.options[this.options.selectedIndex].value)">
+    <option value="0" selected> 中文 Chinese </option>
+    <option value="1"> 英语 English </option>
+</select>
+-->
+
+<!-- Chinese Version -->
+<div class="zh post-container">
+    <blockquote> 柳湖松岛莲花寺，晚动归桡出道场。卢橘子低山雨重，棕榈叶战水风凉。烟波澹荡摇空碧，楼殿参差倚夕阳。到岸请君回首望，蓬莱宫在海中央。
+    </blockquote>
+    test
+
+    <!-- <p style="text-align:right;"></p> -->
+
+</div>
+
+<!-- English Version
+<div class="en post-container">
+</div>
+ -->
+ 
+<!-- Handle Language Change -->
+<script type="text/javascript">
+    var $zh = document.querySelector(".zh");
+    var $en = document.querySelector(".en");
+    function onLanChange(index){
+        if(index == 0){
+            $zh.style.display = "block";
+            $en.style.display = "none";
+        }else{
+            $en.style.display = "block";
+            $zh.style.display = "none";
+        }
+    }
+    onLanChange(0);
+</script>

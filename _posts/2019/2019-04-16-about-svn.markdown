@@ -1,0 +1,95 @@
+---
+layout:     post
+title:      "about svn"
+date:       2019-04-16
+author:     "ZhouJ000"
+header-img: "img/in-post/2019/post-bg-2019-headbg.jpg"
+catalog: true
+tags:
+    - 命令
+--- 
+
+[about git](https://zhouj000.github.io/2018/06/30/about-git/)  
+
+
+
+由于新公司用的是SVN，已经好几年没用了，故写一篇关于SVN的博客，也好以备不时之需
+
+# 概念
+
+SVN是一个开源的版本控制系統，存储的数据放置在一个中央资料档案库中：
++ **repository(源代码库)**：存放源代码的地方
++ **Checkout(提取)**：可以从repository拉一份代码下来
++ **Commit(提交)**：修改了代码后，需要Commit到repository
++ **Update(更新)**：Update可以和Repository上的源代码进行同步更新，手上的代码就会有最新的变更
+
+**生命周期**：
++ 创建版本库
++ 检出
++ 更新
++ 执行变更
++ 复查变化：Commit前复查修改
++ 修复错误：Revert重置对工作副本的修改
++ 解决冲突：Merge可以处理安全的合并，Resolve帮助用户找出冲突并告诉版本库如何处理这些冲突
++ 提交更改
+
+# TortoiseSVN使用
+
+## 第一部分
+
+0、创建一个本地repository(可选)：创建一个空的文件夹，点击`create repository here`
+
+1、创建一个项目：创建一个空的文件夹，点击`SVN Checkout`，选择一个repository后检出当前路径到资源库，会自动创建branches、tags和trunk文件夹。顾名思义，branches存放分支内容，tags存放标签。也可以直接从已有项目拉取，类似于`git clone`
+
+2、在trunk文件夹中创建一个new.txt文件，先点击`Update`更新代码，类似于`git pull`，当然现在是最新的。然后点击`Commit`，填写描述后打上钩提交，可以看到已经提交到repository了，即绿色小勾，类似于直接`git push`
+
+3、在trunk文件夹中创建一个add.txt文件，然后点击`Add`添加，这时并没有真正提交到repository，只是告知SVN准备加入，即蓝色加号，类似于`git add`，但是SVN的add操作是针对没有版本号的新文件的添加，不是git中工作区加入暂存区的概念；然后在new.txt文件中添加内容，可以看到图标变为红色感叹
+
+4、这时在`Show log`中可以看到2条记录，第一条为Imported folder structure记录、第二条是之前的new文件提交记录，类似于`git log`。在`Repo-browser`中查看目录，也是只有那三个文件夹和一个new文件。在`check for modffications`中可以看到新的两个修改记录，一条add，一条modified，类似于`git status`，点击`Revision graph`可以查看当前文件夹下继承关系图，感觉类似于`git log --graph`
+
+
+## 第二部分
+
+1、当多个人同事进行代码开发时，如果更改同一个文件可能会出现冲突，这时如果提交会提示文件已过时，当update后就会使文件处于conflicted冲突状态，这时点击冲突文件，可以通过`diff`查看，最后解决完冲突后点击`Resolve`去解决冲突
+
+2、点击`Update to revision`，可以选择历史版本更新，相当于回到历史版本，类似于`git reset`
+
+3、修改一个文件内容，然后点击`Revert`，可以打钩回退到未修改的状态，类似于`git checkout`
+
+4、当文件因为某些原因处于lock状态时，可以点击`Clean up`去清除
+
+
+## 第三部分
+
+1、点击`Branch/tag...`可以创建分支，比如将trunk下复制到新分支/branch/b1下，然后通过点击`SVN Update`将新创建的分支拉下来，类似于`git branch`或`git checkout -b`
+
+相对于branch，tag或Release就是一个特别的版本，而且不会被merge回去，只是作为一个标记或里程碑。而SVN只有目录的概念，并没有什么tag的用法，因此与创建branch一样，不同是打上最下面的钩，类似于`git tag`
+
+2、点击`Swtich`可以选择分支，类似于`git branch`
+
+3、在两个分支都有修改后，可以在trunk中点击`Merge`去将之前的b1分支合并过来，由于我修改了同一个文件，因此有冲突，在解决冲突后点击Resolve去完成合并，类似于`git merge`
+
+4、点击`Relocate`可以重新定位repository，类似于`git remote set-url`
+
+## 其他
+
+1、创建补丁，区别于分支做不同版本的开发方式，对于不同版本在主干的基础上应用补丁，或者进行代码审核后提交等权限场景，主要是对修改后的文件进行`Create patch`，还可以在log中选择不同版本进行diff保存为patch文件，最后应用`Apply patch`
+
+2、点击`properties`，可以添加设置一些属性
+
+3、可以在项目中`Export`导出到其他文件夹
+
+4、也可以在其他文件夹中将内容`Import`到repository
+
+
+# IDE使用
+
+在idea中，项目右键`Subersion`进行操作，也可在菜单栏VCS下操作。需要注意的有三点：  
+1、需要在VCS -> Enable Version Control Integration选择Subversion去显示项目右键菜单中的按钮  
+2、如果找不到subversion选项，并且setting中也查询不到svn配置，那需要在Plugins中将svn(sub)启用  
+3、在setting -> subversion中设置客户端svn.exe即可
+
+在eclipse中，在Eclipse Marketplace中安装subclipse，然后通过window  -> show view打开svn窗口进行操作
+
+> 具体使用遇到特殊情况再补充
+

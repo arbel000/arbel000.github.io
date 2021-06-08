@@ -1,0 +1,63 @@
+---
+layout:     post
+title:      "Spring(九) IOC时序图"
+date:       2018-09-17
+author:     "ZhouJ000"
+header-img: "img/in-post/2018/post-bg-2018-headbg.jpg"
+catalog: true
+tags:
+    - spring
+--- 
+
+<font id="last-updated">最后更新于：2018-09-18</font>
+
+[Spring(一) IOC核心类](https://zhouj000.github.io/2018/08/19/spring-1/)  
+[Spring(二) Resource定位与载入](https://zhouj000.github.io/2018/08/26/spring-2/)  
+[Spring(三) BeanDefinition解析与注册](https://zhouj000.github.io/2018/08/27/spring-3/)  
+[Spring(四) 自定义标签解析](https://zhouj000.github.io/2018/09/06/spring-4/)  
+[Spring(五) 其他初始化步骤](https://zhouj000.github.io/2018/09/08/spring-5/)  
+[Spring(六) bean的加载01](https://zhouj000.github.io/2018/09/11/spring-6/)  
+[Spring(七) bean的加载02](https://zhouj000.github.io/2018/09/14/spring-7/)  
+[Spring(八) SpringBean的生命周期](https://zhouj000.github.io/2018/09/15/spring-8/)  
+[Spring(九) IOC时序图](https://zhouj000.github.io/2018/09/17/spring-9/)  
+[Spring(十) AOP 01](https://zhouj000.github.io/2018/09/22/spring-10/)  
+[Spring(十一) AOP 02](https://zhouj000.github.io/2018/09/23/spring-11/)  
+[Spring(十二) spring事务](https://zhouj000.github.io/2018/09/24/spring-12/)  
+
+
+
+算是Spring IOC总结，自己手动画一下时序图，依旧使用[processon在线画图](https://www.processon.com/)
+
+# classPathXmlApplicationContext
+
+![classPathXmlApplicationContext](/img/in-post/2018/9/classPathXmlApplicationContext.png)
+
+
+
+# BeanFactory
+
+![applicationContext-ioc-flow01](/img/in-post/2018/9/applicationContext-ioc-flow01.jpg)
+
+
+
+# BeanDefinition
+
+![applicationContext-ioc-flow02](/img/in-post/2018/9/applicationContext-ioc-flow02.jpg)
+
+
+
+# applicationContext
+
+![applicationContext-ioc-flow03](/img/in-post/2018/9/applicationContext-ioc-flow03.jpg)
+
+
+
+# BeanInstance
+
+![applicationContext-ioc-flow04](/img/in-post/2018/9/applicationContext-ioc-flow04.jpg)
+
+
+
+# 总结
+
+绘画时序图能很好的回顾applicationContext初始化的整个过程，不过画图工作量很大，图片也很大

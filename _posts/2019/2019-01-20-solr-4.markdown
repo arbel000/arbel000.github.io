@@ -1,0 +1,286 @@
+---
+layout:     post
+title:      "Solr学习04 - 查询与处理结果"
+date:       2019-01-20
+author:     "ZhouJ000"
+header-img: "img/in-post/2019/post-bg-2019-headbg.jpg"
+catalog: true
+tags:
+    - 大数据
+    - search
+--- 
+
+[Solr学习01 - 入门](https://zhouj000.github.io/2018/12/02/solr-1/)  
+[Solr学习02 - 基本配置](https://zhouj000.github.io/2019/01/16/solr-2/)  
+[Solr学习03 - 创建索引与文本分析](https://zhouj000.github.io/2019/01/18/solr-3/)  
+[Solr学习04 - 查询与处理结果](https://zhouj000.github.io/2019/01/20/solr-4/)  
+[Solr学习05 - solr分面、高亮、查询建议和分组](https://zhouj000.github.io/2019/01/22/solr-5/)  
+[Solr学习06 - solr与solrCloud](https://zhouj000.github.io/2019/01/24/solr-6/)  
+[Solr学习07 - 多语种等复杂查询和相关度提升](https://zhouj000.github.io/2019/01/25/solr-7/)  
+
+
+
+# 请求执行查询
+
+所有请求基本上都是通过请求处理器提交给solr。搜索处理器(search handler)是查询处理的默认请求处理器，通过调用一个或多个搜索组件，每个组件处理搜索请求的一部分，从而满足查询各个阶段的要求。例如通过搜索组件执行主查询，其中分面、搜索结果高亮、拼写检查都有各自的搜索组件。要让查询请求能够使用主搜索组件，需要通过一个或多个查询解析器对查询文本进行解析，其作用是理解查询语法，将其映射为适当的查询对象集，以便在solr索引中找到相关文档集
+
+## 请求处理器
+
+请求处理器(Request Handler)基本上是solr所有请求的入口，作用就是接受请求，执行某些功能，向客户端返回结果。solr拥有许多请求处理器来完成各项任务，例如搜索执行(SearchHandler)、从一台服务器向另一台服务器复制索引(ReplicationHandler)、添加新文档以更新solr索引(UpdateRequestHandler)等。大多数请求处理器都继承自RequestHandlerBase这个Java类，当并不是强制的。SolrRequestHandler接口实现的任何类都可以作为一个请求处理器
+
+Request Handlers：  
+- SearchHandlers  
+- UpdateRequestHandlers  
+- ShardHandlers  
+- Implicit Request Handlers
+
+定义一个请求处理器时，需要指定两个属性：name和class。solr维护了一个请求处理器查找列表，根据每个请求的指定要求，派发对应的请求处理器。如果请求处理器的名称以反斜杠开头(标准做法)，name就是用该请求处理器的相对URL
+```
+<requestHandler name="/select" class="solr.SearchHandler">
+  <lst name="defaults">
+    <str name="echoParams">explicit</str>
+    <int name="rows">10</int>
+  </lst>
+</requestHandler>
+
+http://localhost:8983/solr/gettingstarted/select?q=solr
+```
+
+[RequestHandlers and SearchComponents in SolrConfig](http://lucene.apache.org/solr/guide/7_5/requesthandlers-and-searchcomponents-in-solrconfig.html)
+
+## 搜索组件
+
+搜索组件(Search Components)是在搜索处理器(SearchHandler)生命周期内发生的可配置的处理步骤，搜索组件让搜索处理器将实现单个搜索请求的可重用的功能组合链接在一起
+
+可以定义任意数量的搜索组件，搜索组件只需要被定义一次，之后可以被任意数量的请求处理器调用，通过搜索处理器串联起来:
+```
+<searchComponent name="query" class="solr.QueryComponent" />
+<searchComponent name="facet" class="solr.FacetComponent" />
+<searchComponent name="mlt" class="solr.MoreLikeThisComponent" />
+<searchComponent name="highlight" class="solr.HighlightComponent" />
+<searchComponent name="stats" class="solr.StatsComponent" />
+<searchComponent name="debug" class="solr.DebugComponent" />
+<searchComponent name="expand" class="solr.ExpandComponent" />
+
+<requestHandler name="/select" class="solr.SearchHandler">
+	<arr name="components">
+	  <str>myComponent</str>
+	  <str>query</str>
+	  <str>highlight</str>
+	  <str>debug</str>
+	</arr>
+</requestHandler>
+```
+下面为搜索组件添加了两个部分，invariants部分和defaults部分。如果solr请求的URL里没有重写值，defaults部分就是默认值。如果想要执行安全默认设置，查询搜索组件的q=*:*确保会有结果返回，这种情况下defaults默认值是有用的。invariants部分与defaults部分类似，只不过solr请求URL中常量参数无法被重写，强制执行某些安全过滤器或执行部分设置，比如确保所有请求结果返回数是10，关键词搜索的默认字段是df=content_field，这种情况下invariants设置就是有用的
+```
+<searchComponent name="query" class="solr.QueryComponent">
+	<lst name="defaults">
+		<str name="q">*:*</str>
+		<str name="indent">true</str>
+		<str name="echoParams">explicit</str>
+	</lst>
+	<lst name="invariants">
+		<int name="rows">10</int>
+		<str name="df">content_field</str>
+	</lst>
+</searchComponent>
+```
+大多数搜索组件支持在它们的XML配置中设置相应的属性，即使默认搜索组件没有在solrconfig.xml中明确定义，它们也是默认存在的。除了之前替换了默认配置，还可以通过添加first-components和last-components部分来插入搜索组件。在搜索处理器(SearchHandler)的所有搜索组件中，查询组件(query)是最重要的，因为它负责查询的初始化执行和搜索结果的特定格式响应，而随后的其他搜索组件需要在它的基础上执行。查询组件使用查询解析器对搜索处理器请求中的传入查询进行解析
+
+## 查询解析器
+
+查询解析器将Lucene查询解释为搜索语法，以便查找所需的文档集。solr支持多种查询解析器，还支持用户编写自己的查询解析器。正如搜索组件(QueryComponent)专门用于单个请求处理器(SearchHandler)，查询解析器(QueryParsers)也是专门用于单个搜索组件的
+![solr-queryhandler](/img/in-post/2019/01/solr-queryhandler.jpg)
+
+执行搜索时，QueryComponent根据查询解析器传递的值处理初始的用户查询(q参数)，LuceneQParserPlugin是solr默认的查询解析器。该查询解析器可以很容易进行替换，也可以在同一个查询里与多个查询解析器组合使用。每个查询解析器执行各自的查询类型，支持对应的查询语法，对应不同的使用场景
+
+**指定查询解析器**：QueryComponent的默认查询解析器类型可以使用搜索请求中的defType参数修改，比如`/select?defType=edismax&q=...`，修改默认查询解析器类型会对处理q参数的查询解析器进行更改，从而导致查询结果变化。除了修改默认查询解析器类型外，还可以使用solr特殊语法修改查询中用到的查询解析器:`/select?q={!edismax}hello World OR {!lucene}title:"my title"`
+
+**局部参数**：  
+局部参数未特定上下文提供定制化请求参数。通常做法是在URL里向solr提交请求参数，但有时也可以在查询内的特定部分指定参数。在一个查询中，局部参数可以只为特定查询解析器传递请求参数，而不是全局传递所有请求参数。局部参数时一组用来表示请求参数的键值对集合，只限于当前上下文有效，其语法为:`{!param1=value1 param2=value2...}`，例如：`/select?q=hello world&defType=edismax&qf=title^10 text&q.op=AND`等价于`/select?q={!defType=edismax qf="title^10 text" q.op=AND}hello world`，这两个查询的区别在于第一个例子所有参数都是全局的，因此可以用于请求中的任何位置；而后面的局部参数只在q参数范围内使用。因此如果需要在查询中多次使用不同配置的一个查询解析器，只有使用局部参数可以做到。在局部参数中可以用type代替defType参数，如果只指定一个值，可以省略type
+
+参数值：局部参数声明的值就是要传递给查询解析器的值，因此上面`/select?q={!defType=edismax qf="title^10 text"}hello world`向查询解析器传递的就是hello world，如果不在局部参数声明之后指定值，而在局部参数内部定义参数值有时会更容易些，局部参数的特殊键v就是专门处理这个的，因此同样可以定义为`/select?q={!defType=edismax qf="title^10 text" v="hello world"}`，如果有特殊字符则需要转义
+
+参数解引用：提供了查询中任意变量的替代方法，例如可以`/select?q={!edismax v=$userQuery}&userQuery="hello world"`，通过userQuery参数作为用户定义的查询字段变量传递给solr。通过将eDisMax查询解析器的传入值指定Wie解引用参数$userQuery，该值可以放在请求的任意位置
+
+### 查询与过滤
+
+为有效的查询匹配的文档和计算文档的相关度得分，solr会使用两个参数：fq和q。其中fq参数表示过滤器查询，q参数表示查询
+
+fq只有一个功能：对匹配的文档进行查询限定  
+q有两个功能：对匹配的文档进行查询限定；提供相关度算法以及用于相关度评分的词项列表
+
+因此q参数可视为一个特殊的过滤器，告诉solr在相关度计算时应考虑哪些词项。鉴于这种差异，solr使用者倾向于将用户输入的关键词放入q参数中(例如keywords:"apache solr")，将机器生成的过滤器放入fq参数中(例如category:"technology")
+
+从主查询中分离出过滤器查询fq有两种用途：  
+1、过滤器查询通常在不包含任意关键词的搜索之间可以重复使用，因此可以考虑将过滤器查询的结果缓存在过滤器缓存中  
+2、由于相关度评分操作必须对文档匹配的查询q中每个词项进行计算，那么将查询的一部分拆分为过滤器查询fq，这部分就无须进行额外的相关度计算
+
+solr请求中可以添加任意多个fq参数，但是只能包含一个q参数。例如`q=keywords:solr&fq=category:technology&fq=year:2019`与`q=keywords:solr&fq=category:technology AND year:2019`会以同样的次序返回相同的文档。除了fq参数的缓存用途(每个fq可以独立缓存)，使用多个fq参数在功能上等价于将这些参数合成一个fq参数
+
+**执行顺序**：
+
+由于查询和过滤器都会查找文档集并对它们进行操作，所以它们的执行顺序是怎样的？
+
+从技术层面上看，操作顺序如下：  
+1、在过滤器缓存中对每个fq参数进行查找。若存在，缓存的DocSet将被返回，以OpenBitSet进行封装，其中索引里的每个文档对应一个二进制位，以表示该文档是否包含在过滤器中  
+2、若没有在过滤器缓存中找到fq参数，但缓存已被启用，那么该过滤器将索引进行过滤，得到一个新的DocSet，然后对其缓存  
+3、所有过滤器的DocSet做交集(AND操作)，得到一个DocSet  
+4、q参数与过滤器的DocSet一起传入，作为一个Lucene查询进行搜索。执行查询时，Lucene对查询与组合过滤器进行搭桥处理，将查询与过滤器对象统一成一个当前的内部ID。若查询结果和过滤器结果对象包含相同的ID，则收集该ID，处理过程包括为匹配的文档计算相关度得分  
+5、如果文档包含任何后置过滤器，它们将作为收集过程的一部分，在查询与过滤器做了交集处理之后执行，仅作用于同时匹配组合查询和组合过滤器的文档
+![solr-fqq](/img/in-post/2019/01/solr-fqq.jpg)
+
+对过滤器进行缓存和绕过查询中过滤器部分的相关度处理，可以大大节省处理时间。然而并非所有过滤器情况都一样，比如尝试对搜索结果进行制定经纬度的地理半径过滤，由于涉及数学计算，这个过滤器的计算成本很高。比如在某些应用要生成很多唯一过滤器，对唯一ID进行过滤造成过滤器缓存过载，导致常用的过滤器会被删除或搜索预热时间过长。因此对于这种情况，solr能控制哪些过滤器应该缓存，以确定过滤器的执行顺序
+
+为防止不重要的过滤器造成缓存过载，可以关闭，如`fq={!cache=false}id:123&fq={!frange l=90 u=100 cache=false}scale(query({!v="content:(solr OR lucene)"}), 0, 100)`，其中第一个是专门为每个文档生成的过滤器，不适合放在缓存中；第二个过滤器也是专用的，尝试找到与查询content:(solr OR lucene)相关度最高的前10%的文档。通过获取该查询的相关度得分，将所有文档的得分按比例置于1到100区间，然后过滤出90到100区间之外的文档。由于该过滤器包含一个变量的输入，所以它适合关闭过滤
+
+如果搜索请求包含多个过滤器，它们的执行顺序会对查询产生显著影响。一般来说，能让结果集减少最多的过滤器应该最先被执行，同样执行复杂计算的过滤器应该考虑靠后执行，对于需要花费更多代价的过滤器，通过定义该过滤器相关的执行成本，solr允许它们靠后执行，比如`fq={!cost=1}category:technology&fq={!cost=2}date:[NOW/DAY-1YEAR TO *]&fq={!geofilt pt=37.773,-122.419 sfield=location d=50 cost=3}&fq={!frange l=90 u=100 cache=false cost=100}scale(query({!v="content:(solr OR lucene)"}),0,100)`，执行成本越高的过滤器，它的执行应该更靠后
+
+solr提供了一种特殊类型的过滤器，成为后置过滤器。在查询与组合过滤器一起执行(搭桥处理)，找到的每个文档与查询和过滤器都要匹配。后置过滤器是一种特殊的过滤器，仅用于被调用的文档，让执行成本较低的过滤器先执行，对整体结果进行限定，执行成本较高的后置过滤器最后执行，需要处理的文档数量就少了很多。为过滤器定义cost参数，则也是将一个过滤器转换成后置过滤器的方法。执行成本大于或等于100的过滤器都会被视为后置过滤器，使用后置过滤器接口执行。solr的后置过滤器不一定适用于所有类型的查询和过滤，它只适用于那些使用PostFilter接口的查询和过滤
+
+### 默认查询解析器(Lucene查询解析器)
+
+solr的默认查询解析器是Lucene查询解析器(LuceneQParserPlugin类实现)，它是solr的特定类，Lucene查询解析器全面支持Lucene语法以及solr的一些专用扩展
+
+#### 查询语法
+
+**字段搜索**：语法为字段名称:该字段的搜索表达式，例如`title:"apache solr" content:(search engine)`。如果content定义为默认字段(df=content)，那么`solr`与`content:solr`是等价的，而且还需要注意字段和冒号后的表达式范围必须明确定义，比如`title:apache solr`与`title:apache content:solr`是等价的，因此如果需要在一个字段搜索多个词项，应该`title:(apache solr)`，或者如果尝试短语搜索，使用引号`title:"apache solr"`来定义短语范围要求短语的所有词项必须同时出现
+
+**必备词项**：为指定一个或多个词项必须出现，使用一元运算符+来连接词项。除非文档包含指定的词项，否则不匹配。如果匹配的文档必须包含多个词项，使用二元运算符AND或&&，或对每个词项都使用一元运算符+。例如`apache AND solr`与`apache && solr`与`+apache +solr`等价，如果默认运算符是AND(q.op=AND)，那么也等价于`apache solr`。由于每增加一个必备词项会进一步限制文档集中的结果总数，因此通过使用多个必备词项可以加快查询速度，进一步优化结果数量
+
+**可选词项**：相比限制必备字段的做法，扩大匹配的文档数量则适用于另外一些情况。默认运算符是OR(q.op=OR)，除非有其他指定，否则每个表达式都是可选的。同样多个表达式之间可以使用二元运算符OR或||。例如`apache OR solr`与`apache || solr`与`apache solr(q.op=OR)`是等价的。可选词项越多会导致文档集越大，OR运算比其他布尔运算的执行成本更高。对于关键词搜索，如果内容数量有限，而且希望牺牲查准率为代价，确保能够返回一些结果(更高的查全率)，那么一般会考虑使用OR作为默认运算符
+
+**短语搜索**：如果想要匹配彼此相邻的多个词项，使用引号将它们括起来视为一个短语，例如`"apache solr"`，此查询表达式不能保证匹配出完全一样的文本，被搜索字段可能包含对短语中词项进行修改的分析器
+
+**组合表达式**：为处理任意复杂的布尔子句，solr使用括号将查询表达式组合在一起，例如`(apache AND (solr OR lucene)) AND title:(apache solr)`，组合表达式可以设置表达式的上下文，组合表达式可以任意嵌套
+
+**词项邻近度**：之前短语搜索其实是词项相似度搜索的简化版本。通过添加波浪线和词项位置离数，搜索位置相近的词项，不一定是彼此相邻的，比如`"apache solr"~3`，可以将之前的短语搜索认为是距离为0的(~0)的邻近搜索
+
+**字符邻近**：不仅可以在词项之间进行邻近搜索，还可以对词项中的字符进行基于编辑距离的搜索，找到拼写相似的词项。与词项邻近搜索类似，比如`solr~1`，它可以查找到比如sol、sor、slr、salr等等
+
+**排除词项**：从查询中明确排除特定词项，可以使用一元运算符-或在表达式之间使用NOT布尔运算符，例如`solr NOT panel`和`solr -panel`是等价的
+
+**区间搜索**：希望查询表达式匹配出值的整个区间，可以是数值区间，也可以是日期区间、字符串区间。区间搜索能找到指定的一组值，语法为字段名:[区间]，例如`number:[12.6 TO 100]`、`date:[2019-01-01T10:00:00Z TO NOW-1DAY]`、`string:[ape TO apple]`，还可以使用*打开区间的上下限，比如`number:[60 TO *]`，使用方括号实现闭区间搜索，使用花括号可以实现开区间搜索，例如`num:{0 TO 100}`，其中方括号可以与花括号混合使用
+
+**通配符搜索**：对于用户输入的大多数关键词来说，词干提取这类技术让通配符搜索不太必要了，然而对查找以特定字符集开头的文档或代替单个字符的操作，通配符搜索还是有用处的。语法为星号*代表一个或多个字符，问号?用于替换一个字符，例如`hell* wor?d, t??s is aw*m?`
+
+**权重表达式**：在表达式后面指定了一个插入号^，无论是词项、短语还是组合表达式，都可以调整相关度权重，如果清楚一些表达式比另一个表达式更重要，或者想为查询的不同方面分配一定量的相关度，权重表达式派上用场，例如`(apache^10 solr^100 is^0 awesome^1.234) AND (apache lucene^2.5)^10`
+
+**特殊字符转义**：solr的保留字符，有`+ - && || ! ( ) { } [ ] ^ " ~ * ? : /`，如果需要使用，必须将保留字符用引号括起来，或者使用反斜杠进行转义，例如`q=content:"I'm so happy!!! : )"`全部作为一个短语，否则使用`q=content:(I\'m so happy\!\!\! \: \))`或`q=content:("I'm" "so" "happy!!!" ": )")`。因此正确的做法是，在传入solr之前去除没有搜索价值的保留字符(也可能被字段分析器处理过了)，或者对它们依次进行反斜杠转义
+
+
+### eDisMax查询解析器
+
+Lucene查询解析器语法支持创建任意复杂的布尔查询，但它不是用户查询处理理想的解决方案，最大的问题在于语法严格，一旦破坏就抛出异常，要求用户输入关键词时能理解语法并输入完美的表达式，这显然是不合理的。Lucene查询解析器另一个缺点在于不能默认搜索多个字段，df参数定义了查询解析器默认搜索哪个字段，但是如果想要以不同的权重对多个字段进行搜索，例如默认搜索title和content字段，其中title相关度权重高一点，则需要对用户查询进行预处理，将`q=some keyWords`转换为`q=title:(some keyWords) OR content:(some keyWords)`，或者用AND连接，这样的查询预处理工作量过大。为了将用户查询直接传入solr并优雅地进行处理，扩展的析取最大化查询解析器eDisMax应运而生
+
+eDisMax查询解析器实际上是由Lucene查询解析器和DisMax查询解析器组成，DisMax是eDisMax查询解析器的一个子集。虽然eDisMax查询解析器不是solr默认的，但它具有查询语法容错性，因此对于从用户那里直接获取关键词的搜索应用而言，eDisMax查询解析器是最佳选择。eDisMax查询解析器支持Lucene查询解析器的所有查询语法，它们之间只有一个明显的差别，就是eDisMax对无效的输入语法不会抛出异常，而是会将无效的输入作为文本字符串进行搜索。它还在语法解析上具有一定的容错性，支持特殊关键词，例如可以理解小写转换后的AND和OR。这种灵活性和容错性让它比Lucene查询解析器更适合处理用户输入
+
+除了安全地处理用户输入文本和自由地解析查询语法，eDisMax查询解析器最有用的一个功能是**对多个字段进行搜索**。eDisMax查询解析器不是强制将所有可搜索的内容复制到一个默认的content字段，而是将每块内容放在各自的字段里。例如使用Lucene查询解析器构造为`(((title:solr) OR (description:solr) OR (author:solr)) AND ((title:in) OR (description:in) OR (author:in)) AND ((title:action) OR (description:action) OR (author:action)))`，相比之下使用eDisMax查询解析器通过制定查询和查询字段(df)，更为轻松地实现对多个字段进行搜索`q=solr in action&qf=title description author`，它将内容分别放入多个字段中。eDisMax查询解析器能更好的组织数据，数据不被挤在一个字段里，而且还可以帮助每个字段分别进行idf统计，改进相关评分。保持字段分开的另一个好处就是根据需要为每个字段赋予不同的权重：`q=solr in action&qf=title^1.5 description author^3`
+
+eDisMax查询解析器的另一个重要功能是，**调整彼此相邻的词项的相关度**。使用Lucene查询解析器的典型查询，不管词项是否彼此相邻，或是否视为一个短语，所有词项的相关度都是相同的。eDisMax查询解析器对独立于用户组查询的函数进行任意地相关度调整：
+
+**pf(短语字段)参数**用于调整那些q参数中所有词项彼此非常接近的文档得分。pf参数与qf参数使用相同的格式，获取字段列表及可选的相应权重。eDisMax查询解析器尝试对q参数中所有词项进行短语查询，如果能在任何短语字段中找到确切的短语，则对匹配的文档调整相应的权重。除了pf参数，eDisMax查询解析器还支持**pf2和pf3参数**，这些参数与pf类似，不过不需要q参数中所有词项，它们将词项分解为二元(pf2)或三元(pf3)，只对包含少量词项的文档调整权重。其他还有ps(短语间隔)、ps2和ps3参数，指定查询中的词项间隔位置界限；qs(查询短语间隔)参数，对pf参数上的短语匹配定义间距；tie(决胜局)参数，决定最匹配的字段之外的其他字段的词项相关度得分有多少应该贡献给总体相关度得分；bq(提升查询)参数，包含在主查询q中，用来影响相关度评分，只会修改文档返回的顺序；bf(提升函数)参数，通过函数查询来提升主查询的相关度
+
+**字段别名**：有时需要在solr中使用内部字段名，这些字段名不适合显示给用户，对于动态字段尤其如此，eDisMax查询解析器提供了字段别名机制。字段别名通过在请求中添加参数f.{alias}.qf={realfield}来实现。例如`/select?defType=edismax&q=title:"some title"&f.title.qf=title_t_en`，查询在title_t_en字段上执行，接下来它会被查询中出现的title字段替换。字段别名参数在默认的qf参数后使用，这意味着可以将一个别名分别以不同的权重对应到多个内部字段，在请求中添加任意数量的别名也是可以的。例如有这些字段`personFirstName,personLastName,itemName,companyName,cityName,stateName,postalCodeName`，可以为用户简化查询：`/select?defType=edismax&f.who.qf=personLastName^30 personFirstName^10&f.what.qf=itemName company^5&f.where.qf=city^10 state^20 country^35 postalCode^30&q=...`，在这样的请求中，用户可以用以下语法进行查询：`who:(trey grainger) what:(solr) where:(decatur, ga)`
+![solr-alias](/img/in-post/2019/01/solr-alias.png)
+
+**可访问字段**：在许多情况下用户只能对默认字段以及一部分其他字段进行关键词搜索，由于有些字段可能会包含某些敏感信息，因此不希望用户从solr索引中猜出其他字段并查它们。虽然eDisMax查询解析器允许主查询q参数对任意字段进行搜索，但也可以使用uf(用户字段)参数加以限制，默认uf=*，因此如果要限制只在单个title上搜索，指定`uf=title`即可，多个为`uf=title city date`，如果要对指定字段以外的进行访问，即`uf=* -hiddenField1 -hiddenField2`。uf参数既接受真实字段，也接受别名。因此对之前的用户查询可以进一步约束只能对who和what别名进行搜索：`/select?defType=edismax&&df=text&f.who.qf=lastName^30 firstName^10&f.what.qf=itemName companyName^5&uf=who what&q=+who:(timothy potter) +what:(solr in action) +"big data"`
+
+**最小匹配**：二元运算符AND与OR是Lucene必须匹配和应该匹配的内部表示形式。如果一个查询要匹配多个表达式，却又不在意匹配的是哪个表达式，eDisMax查询解析器通过mm(最小匹配)参数模糊了传统布尔逻辑的界限。为了让文档匹配，mm参数在查询中可以定义必须匹配的特定数量的词项或词项的百分比。这是对搜索应用的查准率和查询率进行操作的一个好工具。原因在于它不要求所有词项必须完全匹配(AND)，或仅需要其中一个词项匹配即可(OR)，mm参数语法很丰富，可以定义必须匹配的表达式数量(正整数)、遗漏的表达式数量(负整数)、必须匹配的表达式百分比(正百分数)、遗漏的表达式百分比(负百分数)，例如`/select?q={!edismax mm="2<50% 4<-45%" v=$example}&example=...`，表示如果有2个或更少的子句，则所有子句必须匹配，如果3或4个子句，则需要50%的匹配率，如果大于4个子句，则最多45%的子句无须匹配
+![solr-mm](/img/in-post/2019/01/solr-mm.png)
+
+**eDisMax的优缺点**：  
+eDisMax查询解析器除了提供Lucene查询解析器的所有查询语法外，还提供了例如多字段搜索、清理用户输入、字段别名与字段限制、通过多查询修正来改进短语相关度和其他权重因素等附加功能。对于典型的面向用户搜索应用，一般会使用eDisMax查询解析器，但是在搜索应用程序层使用eDisMax查询解析器重新实现对用户友好的查询功能是无意义的，如果不需要eDisMax查询解析器提供的附加功能，那么倾向于直接使用Lucene查询解析器。  
+使用eDisMax查询解析器也有一些缺点。首先是eDisMax查询解析器进行多字段搜索相关的处理问题，如果将所有词项放入一个字段并对其进行搜索，查询速度比eDisMax在相同的表达式搜索多个字段要快；其次eDisMax查询解析器对相关度评分的影响也需要考虑，Lucene查询解析器会考虑q参数中每个词项的相关度，不管该字段是否被搜索过，而eDisMax查询解析器仅考虑与词项匹配(默认情况下)的得分最高字段的相关度
+
+
+### 其他查询解析器
+
+**字段查询解析器**：在指定字段中搜索词项或短语，可以使用该字段定义的任何文本分析方法。参数f指明要进行词项或短语搜索的字段：`{!field f=myfield}hello world`与Lucene查询解析器的`{!field f=myfield}hello world`是等价的
+
+**词项查询解析器和原始查询解析器**：词项查询解析器可以直接在solr索引上进行检索，但不能使用字段上定义的文本分析方法，这是它与字段查询解析器的不同之处。词项查询解析器可以对分面搜索返回的值进行过滤，或对solr索引中直接提取的词项进行过滤。词项查询解析器与原始查询解析器的唯一区别是，原始查询解析器在solr索引中搜索确切的词项，而词项查询解析器搜索该词项的可读版本。它们都与字段查询解析器一样，用f参数指向搜索的片段
+
+**函数查询解析器和函数区间查询解析器**：使用函数查询来生成动态值，动态值包括确定地理空间距离、执行数学计算、转换字符串或自定义的函数插件中任意代码
+
+**嵌套查询和嵌套查询解析器**：Lucene查询解析器和eDisMax查询解析器的查询语法支持特殊运算符_query_，可以对其他查询解析器进行替换，使得可以在任意复杂的布尔表达式中组合不同的查询解析器`/select?q=category:("technology" OR "business") AND _query_:"{!edismax qf=title^10 category^4 text}solr lucene hadoop mahout"`，许多情况不需要显示使用_query_语法。除此之外，solr还提供了内置的嵌套查询解析器，局部参数类型是query，可以这样调用`/select?q={!query v=$nestedQuery}`，可以用任意查询进行替换，比如solrconfig中预先定义部分查询后动态替换`<lst name="defaults"><str name="nestedQuery">{!func}product(popularity, 0.25)</str>`
+
+**调整权重查询解析器**：允许根据一个文档是否与特定查询匹配，自行定义相关度的调整策略，无需过滤掉与要调整的查询不匹配的文档。q参数通常用于过滤搜索结果，并获得相关度评分的表达式的相似度情况。调整权重查询解析器可以提交相关度评分中涉及的词项，而不将其作为过滤器使用，例如`{!boost b=1000}shouldboost:true`、`{!boost b=log(popularity}category:trending`。另外也可以使用嵌套查询将调整权重查询解析器与其他查询解析器结合使用：`/select?q=_query_:"{!edismax qf=title content}data science" AND _query_:"{!boost b=log(popularity)}*:*" AND _query_:"{!boost b=recip(ms(NOW,articledate),3.16e-11,1,1)}category:news"`，该查询会搜索关键词data science，并根据流行度和发布时间(如果文档属于"新闻"类别)对这些文档进行相关度调整。该查询的结果数量和直接搜索data science的结果数量相同，对子句的权重调整只是影响了文档的相关度
+
+**前缀查询解析器**：可用于通配符查询，例如`{!prefix f=myfield}engin`，该查询等同于Lucene查询解析器搜索`myfield:engin*`
+
+**空间查询解析器**
+
+**连接查询解析器**
+
+**分支查询解析器**：根据一些逻辑条件在多个查询/过滤器之间做出选择，例如`fq={!switch case.day='date:[NOW/DAY-1DAY TO *]' case.week='price:[NOW/DAY-7DAYS TO *]' case.month='date:[NOW/DAY-1MONTH TO *]' .year='date:[NOW/DAY-1YEAR TO *]' case.else='*:*' v=$withinLast}`
+
+**外围查询解析器**：是为了跨度查询的充分使用而设计的，其用于掌握词项彼此之间的位置关系。使用特殊的运算符n(有序)和w(无序)，前面带一个1~99之间的整数，例如`{!surround}5n(solr, action)`表示在距离词项5个位置内且action必须在solr之后找到solr，`{!surround}solr 3n in 2w action`表示词项in必须在solr之后距离3个位置内，词项solr必须在距离词项in之前或之后的2个位置内。但是外围查询解析器不支持文本分析，这会降低它对典型的关键词搜索的可用性
+
+**最大得分查询解析器**：比如`{!maxscore}term1 term2 term3`，每个文档对这三个词项进行评分，得分最高的(而不是三个词项总得分)将被作为整体的相关度得分
+
+**折叠查询解析器**：能从搜索结果集中删除重复的文档(即这些文档包含指定字段中的相同值)
+
+
+# 返回结果处理
+
+## 选择响应格式
+
+使用wt(write type)参数修改响应格式
+```
+csv		CSVResponseWriter
+json		JSONResponseWriter
+php		PHPResponseWriter
+phps		PHPSerializedResponseWriter
+python		PythonResponseWriter
+ruby		RubyResponseWriter
+xml		XMLResponseWriter
+xslt		XSLTResponseWriter
+javabin		BinaryResponseWriter
+```
+
+例如`/select?wt=json&...`或者`/select?wt=xml&...`
+
+## 选择返回字段
+
+使用fl(字段列表)参数决定从solr返回哪些字段，字段列表定义了搜索结果中每个文档需要返回的字段，字段之间以逗号分隔，例如`/select?...&fl=id,name`、`/select?...&fl=*`
+
+除了返回存储字段外，文档还包含一种可以了解该文档的有用信息，即相关度得分。通过请求特殊的得分字段可以返回每个文档的相关度得分：`select?...&fl=*,score`由于相关度得分不属于存储字段，不能在*通配符自动返回，因此需要指定。相关度得分仅仅文档返回的动态值中的一种，solr还有函数查询功能，它能计算出文档的各种值，比如`/select?...&fl=id,sum(integerField, 10)`会对整数字段的值加10并作为文档的特殊字段返回
+
+还有一些文档的额外信息也是有帮助的，文档转换器的调用方法为`/select?...&fl=*,[explain],[shard]`，该请求调用了两个特殊字段，这些方括号括起来的字段调用文档转换器会获得每个文档的一些元信息
+```
+solr常用内置转换器列表
+[docid]							Lucene内部文档ID (一个整数)
+[shard]							生成结果的分片ID
+[explain]						相关度计算的解释
+[explain style=nl|text|html]				特定格式(样式)的相关度计算解释
+[value v=? t=int|double|float|date]			每个文档都相同的一个具体值
+```
+除了solr内置的文档转换器，还可以通过继承DocTransformer类，以插件形式编写自己的文档转换器，然后在solrconfig.xml中注册这个转换工厂类
+
+除了通过动态生成值返回伪字段外，在搜索结果的文档返回前，solr还提供了一种字段重命名的方法，字段别名在实际字段名之前出现。例如`/select?...&fl=id,betterFieldName:actualFieldName`，更有理解含义的字段名称会更友好
+
+## 分页
+
+solr返回数从千位数量级开始，请求速度和吞吐速度大幅降低，因此应该只返回最相关的一夜结果，然后允许用户翻页。使用start和rows参数可以实现分页。例如`/select?q=*:*&sort=id&fl=id&rows=5&start=0`将返回0开始的前5个文档，`/select?q=*:*&sort=id&fl=id&rows=5&start=5`将返回下一页的5个文档
+
+## 排序
+
+执行关键词搜索，搜索结果默认按照关键词相关度得分进行排序(得分高在前)，对于相同得分的文档，根据搜索索引的Lucene内部文档编号以升序方式进行排序，如果没有相关度得分，则按Lucene内部文档编号进行排序。除此之外，日期、词项、数字以及函数等都可以作为排序依据
+
+**按字段排序**：通过sort参数可以在搜索请求中修改默认排序：例如`sort=someField desc, someOtherField asc`、`sort=date desc, popularity desc, score desc`。排序是基于索引词项的次序，字段对于不同语言的排序也不尽相同，solr内置了针对特定语言排序的分词过滤器
+
+**对缺失值排序**：由于solr默认情况下不需要大多数字段必备，因此很容易出现一个字段只有部分文档具备，这时solr提供了sortMissingLast和sortMissingFirst两个属性，在schema中对fieldType进行属性配置
+
+**按函数排序**：根据函数查询的计算值进行排序，比如根据距离某一点的地理距离(使用geodist函数)或文档的流行度与新旧度(对流行度字段和日期字段使用数学函数)进行排序，甚至可以将字段排序与函数排序结合起来使用
+
+**模糊排序**：大多情况下更多的是一种相关度考虑
+
+**排序的内存占用**：排序是一个非常占用内存的过程。为了对文档排序，sorl使用lucene的字段缓存，在首次请求排序时将字段的所有唯一值加载到内存中，这意味着每个字段的排序都会消耗大量内存，因此需要有足够的内存来执行排序
+
+## 调试结果
+
+如果要了解查询背后发生了什么，可以开启调试选项，在请求中传入`debug=true`参数，激活DebugComponent
+
+
+扩展：  
+[Solr系列五：solr搜索详解（solr搜索流程介绍、查询语法及解析器详解）](https://www.cnblogs.com/leeSmall/p/9148360.html)

@@ -1,0 +1,494 @@
+---
+layout:     post
+title:      "前端学习(一) HTML5"
+date:       2019-10-20
+author:     "ZhouJ000"
+header-img: "img/in-post/2019/post-bg-2019-headbg.jpg"
+catalog: true
+tags:
+    - html
+--- 
+
+[前端学习(一) HTML5](https://zhouj000.github.io/2019/10/20/html5/)  
+
+
+
+# HTML5
+
+之前对HTML还是熟悉的，而对HTML5只是知道而没具体了解，这次来学习一下HTML5。首先什么是 HTML5？  
+1、HTML5成为HTML、XHTML以及HTML DOM的**新标准**  
+2、HTML5是专门为承载丰富的web内容而设计的，并且无需额外插件  
+3、HTML5拥有**新的语义**、图形以及多媒体元素  
+4、HTML5提供的**新元素**和**新的API**简化了web应用程序的搭建  
+5、HTML5是**跨平台**的，被设计为在不同类型的硬件之上运行  
+
+`<!DOCTYPE>`声明**必须是HTML文档的第一行**，该声明不是HTML标签；它是指示web浏览器关于页面使用哪个HTML版本进行编写的指令，因此在编写HTML时始终向HTML文档添加`<!DOCTYPE>`声明，这样浏览器才能获知文档类型。
+
+在HTML 4.01中，`<!DOCTYPE>`声明引用DTD，因为其基于SGML。DTD规定了标记语言的规则，这样浏览器才能正确地呈现内容。而HTML5不基于 SGML，所以不需要引用DTD，只需要非常简单的`<!DOCTYPE html>`就行，**相比HTML 4.01中有三种声明简单了许多**
+
+## 新特性
+
++ 新的**语义元素**
+	- HTML5定义了八个新的语义HTML元素，所有都是块级元素
+	- 比如header、section、footer、aside、nav、main、article、figure等
++ 新的**表单控件**
+	- 比如数字、日期、时间、日历、滑块(calendar、date、time、email、url、search)
++ 强大的**图像支持**
+	- 借由`<canvas>`和`<svg>`
++ 强大的**多媒体支持**
+	- 借由`<video>`和`<audio>`
++ 强大的新**API**
+	- 比如用本地存储取代cookie
+
+同样，H5也**删除**了一些HTML4元素：`<acronym>`、`<applet>`、`<basefont>`、`<big>`、`<center>`、`<dir>`、`<font>`、`<frame>`、`<frameset>`、`<noframes>`、`<strike>`、`<tt>`
+
+
+
+## 元素
+
+![newTag](/img/in-post/2019/10/newTag.png)
+
+语义元素是拥有语义的元素，**语义元素清楚地向浏览器和开发者描述其意义**：  
+1、非语义元素：`<div>`、`<span>`，无法提供关于其内容的信息  
+2、语义元素：`<form>`、`<table>`、`<img>`，清晰地定义其内容  
+
+HTML5提供了定义页面不同部分的新语义元素：
+![buju](/img/in-post/2019/10/buju.png)
+
+在HTML4的时候，我们会使用属性名来设置页面元素的样式，但是这样浏览器并不能正确识别网页内容，而在HTML5中通过语义元素，浏览器就可以正确识别
+
+大多数HTML元素被定义为**块级元素(block level element)**或**内联元素(inline element)**：  
+1、块级元素在浏览器显示时，通常会以**新行**来开始(和结束)，例如div，它是可用于组合其他HTML元素的容器；还有h1、p、ul、table等  
+2、内联元素在显示时通常不会以新行开始，例如span，可用作文本的容器；还有b、td、a、img等  
+
+
+#### section元素
+
+定义文档中的节，节(section)是**有主题的内容组**，通常具有标题。比如将网站首页划分为简介、内容、联系信息等节
+```
+<section>
+<h1>Hello World</h1>
+<p>
+LOL.........
+</p>
+</section>
+```
+
+#### article元素
+
+规定了**独立的自包含内容**，文档有其自身的意义，并且可以独立于网站其他内容进行阅读，可以用于新闻、论坛、博客
+
+article元素定义完整的相关元素自包含块，section元素被定义为相关元素块。它们都是**嵌套语义元素**，但是并不能确定如何嵌套元素。我们可以用section元素包含article元素，也可以article元素包含section元素，同样section元素也能包含section元素，article元素包含article元素
+
+#### header元素
+
+为文档或节规定**页眉**，应该被用作介绍性内容的容器。个文档中可以有多个header元素
+```
+<article>
+	<header>
+		<h1>HTML</h1>
+		<p>HTML5:</p>
+	</header>
+	<header>
+		hello:
+	</header>
+	<p>HTML5 + CSS + JS</p>
+</article> 
+```
+
+#### footer元素
+
+为文档或节规定**页脚**，应该提供有关其包含元素的信息，页脚通常包含文档的作者、版权信息、使用条款链接、联系信息等等。同样可以在一个文档中使用多个footer元素
+
+```
+<footer>
+  <p>Posted by: zhou</p>
+  <p>Contact information: <a href="mailto:someone@example.com">someone@example.com</a>.</p>
+</footer>
+```
+
+#### nav元素
+
+定义**导航链接集合**，旨在定义大型的导航链接块。不过并非文档中所有链接都应该位于nav元素中
+
+```
+<nav>
+	<a href="/html/">HTML</a> |
+	<a href="/css/">CSS</a> |
+	<a href="/js/">JavaScript</a> |
+	<a href="/jquery/">jQuery</a>
+</nav> 
+```
+
+#### aside元素
+
+定义页面**主内容之外**的某些内容，比如侧栏。aside内容应该与周围内容相关
+
+#### figure元素与figcaption元素
+
+在书籍和报纸中，标题会与图片搭配，在HTML5中，**图片和标题能够被组合在figure元素中**
+```
+<figure>
+   <img src="pic.jpg" alt="pic" width="300" height="230">
+   <figcaption>this is a picture</figcaption>
+</figure> 
+```
+img元素定义了图像，figcaption元素定义了标题
+
+#### article元素、section元素与div元素之间的区别
+
+在HTML5标准中，article、section与div之间的**差异很小**，其中：  
+1、section元素被定位为相关元素的块  
+2、article元素被定义为相关元素的完整的自包含块  
+3、div元素被定义为子元素的块  
+
+
+
+## 表单
+
+![form](/img/in-post/2019/10/form.png)
+- HTML5增加了表单元素
+	+ datalist、keygen、output
+- HTML5增加了多个新的输入类型
+	+ color、date、datetime、datetime-local、email、month、number、range、search、tel、time、url、week
+- HTML5为input增加了新的属性
+	+ autocomplete、autofocus、form、formaction、formenctype、formmethod、formnovalidate、formtarget、height和width、list、min和max、multiple、pattern(regexp)、placeholder、required、step
+
+#### datalist元素
+
+为input元素规定**预定义选项列表**，用户会在他们输入数据时看到预定义选项的下拉列表。input元素的list属性**必须引用**datalist元素的**id**属性：
+```
+<form action="action_page.php">
+<input list="browsers">
+<datalist id="browsers">
+   <option value="Internet Explorer">
+   <option value="Firefox">
+   <option value="Chrome">
+   <option value="Opera">
+   <option value="Safari">
+</datalist> 
+</form>
+```
+
+#### number类型
+
+```
+<form>
+  Quantity (between 1 and 5):
+  <input type="number" name="quantity" min="1" max="5">
+</form>
+```
+
+#### autocomplete属性
+
+autocomplete属性规定表单或输入字段是否应该自动完成。当自动完成开启，浏览器会基于用户之前的输入值自动填写值。可以把表单的autocomplete设置为 on，同时把特定的输入字段设置为off：
+```
+<form action="action_page.php" autocomplete="on">
+   First name:<input type="text" name="fname"><br>
+   Last name: <input type="text" name="lname"><br>
+   E-mail: <input type="email" name="email" autocomplete="off"><br>
+   <input type="submit">
+</form> 
+```
+
+
+## 图像媒体
+
+![med](/img/in-post/2019/10/med.png)
+
+#### canvas元素
+
+canvas元素使用JavaScript在网页上**绘制图像**，画布是一个矩形区域，可以控制其每一像素。canvas拥有多种绘制路径、矩形、圆形、字符以及添加图像的方法
+
+```
+// 创建canvas元素，规定元素的id、宽度和高度：
+<canvas id="myCanvas" width="200" height="100"></canvas>
+
+// canvas元素本身是没有绘图能力的，所有的绘制工作必须在JavaScript内部完成：
+<script type="text/javascript">
+	var c = document.getElementById("myCanvas");
+	var cxt = c.getContext("2d");
+	cxt.fillStyle = "#FF0000";
+	// 在画布上绘制150x75的矩形，从左上角开始(0,0)
+	cxt.fillRect(0,0,150,75);
+</script>
+```
+
+#### 内联SVG
+
+SVG(Scalable Vector Graphics)指**可伸缩矢量图形**，用于定义用于网络的基于矢量的图形，是万维网联盟的标准。SVG使用XML格式定义图形，与其他图像格式(JPEG、GIF..)相比，SVG图像可通过文本编辑器来创建和修改，并且可被搜索、索引、脚本化或压缩，放大缩小也不会有损失
+
+```
+// 画一个五角星
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="190">
+  <polygon points="100,10 40,180 190,60 10,60 160,180"
+   style="fill:lime;stroke:purple;stroke-width:5;fill-rule:evenodd;" />
+</svg>
+```
+
+#### SVG与Canvas对比
+
++ Canvas
+	- 依赖分辨率，通过JavaScript来绘制2D图形，是**逐像素**进行渲染的
+	- 不支持事件处理器
+	- 弱的文本渲染能力
+	- 能够以.png或.jpg格式保存结果图像
+	- 一旦图形被绘制完成，它就**不会**继续得到浏览器的关注，如果其位置发生变化，那么整个场景也需要**重新绘制**
+		+ 最适合图像密集型的游戏，其中的许多对象会被频繁重绘
+SVG
+	- **不依赖分辨率**，使用XML描述2D图形
+	- **支持事件处理器**，SVG DOM的每个元素都是**可用**的，可以为每个元素附加JavaScript事件处理器
+	- 每个被绘制的图形均被视为对象，如果SVG对象的属性发生变化，那么浏览器能够**自动重现**图形
+		+ 最适合带有大型渲染区域的应用程序(比如谷歌地图)，
+	- 复杂度高会**减慢**渲染速度(任何过度使用DOM的应用都不快)
+	- 不适合游戏应用
+
+#### 多媒体
+
+多媒体来自多种不同的格式，它可以是您听到或看到的任何内容，文字、图片、音乐、音效、录音、电影、动画等等
+
+WAVE是因特网上最受欢迎的无压缩声音格式，所有流行的浏览器都支持它。如果需要未经压缩的声音(音乐或演讲)，那么应该使用WAVE格式。MP3是最新的压缩录制音乐格式，如果网站从事录制音乐，那么MP3是一个选项
+
+`<object>`的作用是支持HTML助手(插件)，辅助应用程序(helper application)是可由浏览器启动的程序，也称为**插件**。辅助程序使用`<object>`标签加载，用于播放音频、视频以及其他
+```
+// 使用 QuickTime 来播放MP4视频
+<object width="420" height="360"
+classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"
+codebase="http://www.apple.com/qtactivex/qtplugin.cab">
+	<param name="src" value="movie.mp4" />
+	<param name="controller" value="true" />
+</object>
+```
+
+除了object元素，也可以使用`<embed>`标签来将**插件**添加到HTML页面，`<embed>`标签是定义**外部(非HTML)内容的容器**，这是一个HTML5的标签，在HTML4中是无效的
+```
+// 显示嵌入网页中的 MP3 文件
+<embed height="100" width="100" src="song.mp3" />
+// 或者
+<object height="100" width="100" data="song.mp3"></object>
+
+
+// 显示嵌入网页的Flash视频
+<embed src="movie.swf" height="200" width="200"/>
+// 或者
+<object data="movie.swf" height="200" width="200"/>
+```
+
+需要注意的是：  
+1、不同的浏览器对音频格式的支持也不同  
+2、如果浏览器不支持该文件格式，没有插件的话就无法播放该音频  
+3、如果用户的计算机未安装插件，无法播放音频  
+4、如果把该文件转换为其他格式，仍然无法在所有浏览器中播放  
+```
+// 上例中的mp3在IE、Chrome以及Safari中有效，为了使其在Firefox和Opera中同样有效，添加了一个ogg类型的文件
+// 使用HTML 5的<audio>标签，尝试以mp3或ogg来播放音频。如果失败，代码将回退尝试<embed>元素
+<audio controls="controls" height="100" width="100">
+  <source src="song.mp3" type="audio/mp3" />
+  <source src="song.ogg" type="audio/ogg" />
+  <embed height="100" width="100" src="song.mp3" />
+</audio>
+
+
+// <video>是HTML 5中的新标签，作用是在HTML页面中嵌入视频元素，会把视频转换为很多不同的格式
+// 使用了4种不同的视频格式。HTML 5的<video>元素会尝试播放以mp4、ogg或webm格式中的一种来播放视频。如果均失败，则回退到<embed>元素
+<video width="320" height="240" controls="controls">
+  <source src="movie.mp4" type="video/mp4" />
+  <source src="movie.ogg" type="video/ogg" />
+  <source src="movie.webm" type="video/webm" />
+  <object data="movie.mp4" width="320" height="240">
+    <embed src="movie.swf" width="320" height="240" />
+  </object>
+</video>
+```
+
+另外，可以使用一些播放器，比如雅虎的媒体播放器，通过一行简单的代码，您就可以把它添加到网页中，轻松地将HTML页面转变为专业的播放列表。而且使用雅虎播放器是免费的，不过提供的是一个小型的播放按钮，而不是完整的播放器。另外也可以使用优酷等视频网站，插入其代码播放
+```
+<a href="song.mp3">Play Sound</a>
+
+<script type="text/javascript" src="http://mediaplayer.yahoo.com/js">
+</script>
+```
+
+另外，如果网页包含指向媒体文件的超链接，大多数浏览器会使用“辅助应用程序”来播放文件，因此使用a标签指向mp3文件的链接，用户点击后就可以播放
+
+
+
+## API
+
+#### 拖放
+
+**拖放**(Drag和Drop)是很常见的特性，它是HTML5标准的组成部分，即任何元素都是可拖放的
+
+1、先将一个元素设为可拖放的：`<img draggable="true">`  
+2、设置元素被拖放时的事件，**setData**：
+```
+// 设置被拖动数据的数据类型和值
+function drag(ev) {
+	// 数据类型是"text"，而值是这个可拖动元素的id("drag1")
+    ev.dataTransfer.setData("text", ev.target.id);
+}
+
+// ondragstart设置拖动什么数据
+<img id="drag1" src="img_logo.gif" draggable="true" ondragstart="drag(event)" width="336" height="69">
+```
+3、设置元素将拖到何处，并进行放置：
+```
+// 当放开被拖数据时，会发生drop事件
+function drop(ev) {
+	// 默认情况下，数据/元素无法被放置到其他元素中。为了实现拖放，必须阻止元素的这种默认的处理方式(drop事件的默认行为是以链接形式打开)
+    ev.preventDefault();
+	// 获得被拖的数据，将返回在setData()方法中设置为相同类型的任何数据
+    var data = ev.dataTransfer.getData("text");
+	// 把被拖元素追加到放置元素中
+    ev.target.appendChild(document.getElementById(data));
+}
+
+// ondragover设置数据能放置到哪里
+<div id="div1" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+```
+
+#### 本地存储
+
+通过本地存储(Local Storage)，web应用程序能够在用户浏览器中对数据进行本地的存储。在HTML5之前，应用程序数据只能存储在**cookie中**，包括每个服务器请求。而**本地存储则更安全**，并且可在不影响网站性能的前提下将大量数据存储于本地，而且与cookie不同，存储限制要大得多(至少5MB)，存储的信息也不会被传输到服务器
+
+本地存储经由起源地(origin)(经由域和协议)。所有页面从起源地能够存储和访问相同的数据，**HTML本地存储优于cookies**
+
+HTML 本地存储提供了两个在客户端存储数据的对象：  
+1、**window.localStorage**：存储没有截止日期的数据  
+2、**window.sessionStorage**：针对一个session来存储数据(当关闭浏览器标签页时数据会丢失)  
+
+在使用本地存储时，需要检测localStorage和sessionStorage的浏览器支持：
+```
+if (typeof(Storage) !== "undefined") {
+    // 针对 localStorage/sessionStorage 的代码
+} else {
+    // 抱歉！不支持 Web Storage ..
+}
+```
+localStorage对象(当浏览器被关闭时数据不会被删除，在下一天、周或年中，都是可用的)，需要注意的是，名称/值对始终存储为**字符串**。如果需要得把它们转换为其他格式进行使用：
+```
+// 存储，其中：name="lastname"，value="Gates"
+localStorage.setItem("lastname", "Gates");
+// localStorage.lastname = "Gates";
+// 取出，并插入到id="result"的元素中
+document.getElementById("result").innerHTML = localStorage.getItem("lastname");
+// document.getElementById("result").innerHTML = localStorage.lastname;
+
+// 删除
+localStorage.removeItem("lastname");
+```
+sessionStorage对象，不同与localStorage对象，它只对一个session存储数据，如果用户关闭具体的浏览器标签页，数据也会被删除：
+```
+// 存储
+sessionStorage.clickcount = Number(sessionStorage.clickcount) + 1;
+// 取出
+document.getElementById("result").innerHTML = sessionStorage.clickcount
+```
+
+#### 应用程序缓存
+
+HTML5引入了应用程序缓存(Application Cache)，这意味着可对**web应用进行缓存**，并可在没有因特网连接时进行访问，它带来了3个优势：  
+1、**离线浏览**：用户可在应用离线时使用它们  
+2、**速度**：已缓存资源加载得更快  
+3、**减少服务器负载**：浏览器将只从服务器下载更新过或更改过的资源
+
+如需启用应用程序缓存，请在文档的html标签中包含**manifest属性**：
+```
+<!DOCTYPE HTML>
+<html manifest="demo.appcache">
+...
+</html>
+```
+注意：每个指定了manifest的页面在用户对其访问时都会被缓存。如果未指定manifest属性，则页面不会被缓存(除非在manifest文件中直接指定了该页面)。manifest文件的建议文件扩展名是**.appcache**，并且manifest文件需要设置正确的MIME-type，即"text/cache-manifest"，而且要在web服务器上进行配置
+
+manifest文件是简单的**文本文件**，它告知浏览器被缓存的内容(以及不缓存的内容)，文件由三个部分组成：  
+1、**CACHE MANIFEST**：在此标题下列出的文件将在首次下载后进行缓存  
+2、**NETWORK**：在此标题下列出的文件需要与服务器的连接，且不会被缓存  
+3、**FALLBACK**：在此标题下列出的文件规定当页面无法访问时的回退页面(如404页面)  
+```
+// 更新注释行中的日期和版本号是一种使浏览器重新缓存文件的办法
+# 2019-10-19 v1.0.0
+// 第一行，必须，定义当manifest文件被加载后，浏览器会从网站的根目录下载这三个文件。然后无论用户何时与因特网断开连接，这些资源依然可用
+CACHE MANIFEST
+/theme.css
+/logo.gif
+/main.js
+
+// 定义文件永远不会被缓存，且离线时是不可用的，也可用*表示所有其他资源/文件都需要因特网连接
+NETWORK:
+login.asp
+
+// 如果无法建立因特网连接，则用offline.html替代 /html/ 目录中的所有文件
+FALLBACK:
+// URI资源 + 替补页面
+/html/ /offline.html
+```
+一旦应用被缓存，它就会**保持缓存直到发生下列情况**：  
+1、用户**清空**浏览器缓存  
+2、manifest文件**被修改**(上例中的更新日期和版本号)  
+3、由**程序**来更新应用缓存  
+
+#### Web worker
+
+在HTML页面中执行脚本时，页面是不可响应的，直到脚本已完成。而Web worker是运行在后台的JavaScript，**独立于其他脚本**，不会影响页面的性能，可以继续做任何愿意做的事情
+```
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Count numbers: <output id="result"></output></p>
+<button onclick="startWorker()">Start Worker</button> 
+<button onclick="stopWorker()">Stop Worker</button>
+<br><br>
+
+<script>
+var w;
+
+function startWorker() {
+    if(typeof(Worker) !== "undefined") {
+        if(typeof(w) == "undefined") {
+			// 创建一个新的web worker对象，然后运行demo_workers.js中的代码
+            w = new Worker("demo_workers.js");
+        }
+		// 向web worker添加一个onmessage事件监听器
+        w.onmessage = function(event) {
+			// 当web worker传送消息时，会执行事件监听器中的代码，来自web worker的数据会存储于event.data中
+            document.getElementById("result").innerHTML = event.data;
+        };
+    } else {
+        document.getElementById("result").innerHTML = "Sorry! No Web Worker support.";
+    }
+}
+
+function stopWorker() {
+	// 终止web worker，并释放浏览器/计算机资源
+    w.terminate();
+	// 复用Web Worker
+    w = undefined;
+}
+</script>
+
+</body>
+</html>
+
+
+// demo_workers.js
+var i = 0;
+function timedCount() {
+    i = i + 1;
+    postMessage(i);
+    setTimeout("timedCount()",500);
+}
+timedCount();
+```
+
+#### Server-Sent事件
+
+Server-Sent事件指的是网页**自动从服务器获得更新**。以前也可能做到这一点，前提是网页不得不询问是否有可用的更新，通过Server-Sent事件，更新能够自动到达。例如Facebook/Twitter更新、股价更新、新的博文、赛事结果等等
+
+
+
+参考：  
+[W3C School](https://www.w3school.com.cn/html/html5_intro.asp)  
+[W3C School](https://www.w3school.com.cn/html5/index.asp)
+

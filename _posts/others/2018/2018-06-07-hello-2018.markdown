@@ -1,0 +1,39 @@
+---
+layout:     post
+title:      "Welcome to ZhouJ000 Blog"
+subtitle:   "第一篇博文"
+date:       2018-06-07
+author:     "ZhouJ000"
+header-img: "img/in-post/2018/post-bg-2018-headbg.jpg"
+catalog: true
+tags:
+    - 杂谈
+---
+
+## 前言
+
+ZhouJ000 的 Blog 就这么开通了。
+
+
+## 正文
+
+先来说说搭建这个博客的过程。
+
+先是突然有了搭个个人博客的想法，然后询问好友，得出在github.io上可以创建自己的博客。于是就去了解了如何搭建。
+
+搭建的过程其实很简单，在github上new一个已<username>.github.io为格式的repo,使用[GitHub Pages](https://pages.github.com/) + [Jekyll](https://jekyllrb.com/)来快速实现博客的搭建。
+
+前部分比较容易，由于本人后端java出生，对前端没太多研究，只会3、4年前用到的jquery技术，所以对于Jekyll模板，就直接借鉴了Hux BLOG，这里非常感谢作者的模板。之后就是在其基础上进行修改。
+
+本地可以安装ruby，然后安装github-pages，开启Jekyll本地服务(jekyll serve --watch)来观察效果。
+目前对模板进行最简单的使用，去除了不需要的部分，后续会研究下Jekyll模板，实现更好的效果。
+
+对于博文都要求放在_posts目录下面，同时有严格的规定，所以用Markdown的编写博文。
+第一次使用Markdown语法，也希望未来在这个BLOG上积累更多的文章。
+
+
+## 后记
+
+回顾这个博客的诞生，一方面出于个人兴趣，另一方面更希望能把说看所学的知识积累起来。
+
+在未来某个时间点，回头看看之前的东西，或许也蛮有趣的:)

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include head.html %}
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+	<!-- back to top -->
+	<p id="back-to-top"><a href="#top"></a></p>
+
+    {% include nav.html %}
+
+    {{ content }}
+
+    {% include footer.html %}
+
+
+</body>
+
+</html>
