@@ -10,10 +10,11 @@ tags:
     - 哲学
 --- 
 
-[未明子(刘司墨)哲学观点记录(一)](https://zhouj000.github.io/2021/04/11/wmz-philosophy1/)  
-[未明子(刘司墨)哲学观点记录(二)](https://zhouj000.github.io/2021/04/22/wmz-philosophy2/)  
-[未明子(刘司墨)哲学观点记录(三)](https://zhouj000.github.io/2021/05/09/wmz-philosophy3/)  
-[未明子(刘司墨)哲学观点记录(四)](https://zhouj000.github.io/2021/05/22/wmz-philosophy4/)  
+[未明子(刘司墨)哲学观点记录(一)](https://arbel000.github.io/2021/04/11/wmz-philosophy1/)  
+[未明子(刘司墨)哲学观点记录(二)](https://arbel000.github.io/2021/04/22/wmz-philosophy2/)  
+[未明子(刘司墨)哲学观点记录(三)](https://arbel000.github.io/2021/05/09/wmz-philosophy3/)  
+[未明子(刘司墨)哲学观点记录(四)](https://arbel000.github.io/2021/05/22/wmz-philosophy4/)  
+[未明子(刘司墨)哲学观点记录(六)](https://arbel000.github.io/2021/06/14/wmz-philosophy6/)  
 
 
 

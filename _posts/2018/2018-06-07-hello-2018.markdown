@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      "Welcome to ZhouJ000 Blog"
+title:      "Transfer from ZhouJ000 Blog"
 subtitle:   "第一篇博文"
 date:       2018-06-07
 author:     "ZhouJ000"
