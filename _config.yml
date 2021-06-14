@@ -4,8 +4,8 @@ SEOTitle: 俊 | ZhouJ000 Blog
 header-img: img/home-bg.jpg
 email: 123259785@qq.com
 description: ""
-keyword: "zhouj000"
-url: "http://zhouj000.github.io"
+keyword: "arbel000"
+url: "http://arbel000.github.io"
 baseurl: ""
 
 
@@ -69,8 +69,8 @@ service-worker: true
 # Friends
 friends: [
     {
-        title: "paulzjw",
-        href: "https://paulzjw.github.io/"
+        title: "zhouj000",
+        href: "https://zhouj000.github.io/"
 	}
 #    },{
 #        title: "Foo",

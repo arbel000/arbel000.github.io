@@ -3,12 +3,6 @@ layout: page
 description: "精彩不亮丽 起落是无常"
 ---
 
-{% if paginator.page == 1 %}
-<div class="post-preview">
-	<a href="/2000/01/01/sticky/"><h2 class="post-title">[置顶]技术类导航</h2></a>
-</div>
-<hr/>
-{% endif %}
 
 {% for post in paginator.posts %}
 <div class="post-preview">
