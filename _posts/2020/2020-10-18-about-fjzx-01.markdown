@@ -6,7 +6,8 @@ author:     "ZhouJ000"
 header-img: "img/in-post/2020/post-bg-2020-headbg.jpg"
 catalog: true
 tags:
-    - 人文
+    - 哲学
+    - 宗教
 --- 
 
 [听播佛教哲学笔记 (一) 哲学分类与相依缘起](https://arbel000.github.io/2020/10/18/about-fjzx-01/)  
