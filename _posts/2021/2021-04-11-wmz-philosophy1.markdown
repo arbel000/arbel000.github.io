@@ -15,6 +15,7 @@ tags:
 [未明子(刘司墨)哲学观点记录(四)](https://arbel000.github.io/2021/05/22/wmz-philosophy4/)  
 [未明子(刘司墨)哲学观点记录(五)](https://arbel000.github.io/2021/06/15/wmz-philosophy5/)  
 [未明子(刘司墨)哲学观点记录(六)](https://arbel000.github.io/2021/06/14/wmz-philosophy6/)  
+[未明子(刘司墨)哲学观点记录(七)](https://arbel000.github.io/2021/07/27/wmz-philosophy7/)  
 
 
 
