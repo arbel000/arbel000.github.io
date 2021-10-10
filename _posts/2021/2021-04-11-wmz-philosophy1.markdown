@@ -16,6 +16,7 @@ tags:
 [未明子(刘司墨)哲学观点记录(五)](https://arbel000.github.io/2021/06/15/wmz-philosophy5/)  
 [未明子(刘司墨)哲学观点记录(六)](https://arbel000.github.io/2021/06/14/wmz-philosophy6/)  
 [未明子(刘司墨)哲学观点记录(七)](https://arbel000.github.io/2021/07/27/wmz-philosophy7/)  
+[未明子(刘司墨)哲学观点记录(八)](https://arbel000.github.io/2021/10/07/wmz-philosophy8/)  
 [未明子(刘司墨)哲学观点记录(九)](https://arbel000.github.io/2021/09/05/wmz-philosophy9/)  
 
 
@@ -150,7 +151,7 @@ A用符号A去指称它的时候，符号与A本身已经是两个东西了，�
 	- 秩序的彻底失败，场域的空洞，毫无秩序的匮乏和丧失
 
 
-## 模型
+## 模型总纲
 
 [【哲学大全】一个关于所有主义的主义](https://zhuanlan.zhihu.com/p/61748253)
 
